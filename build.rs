@@ -43,7 +43,14 @@ const PROBE: &str = r#"
 "#;
 
 fn main() {
-    if cfg!(feature = "std") {
+    // Added env::var("CARGO_CFG_TARGET_ENV").unwrap() != "sgx" to the condition
+    // in order to disable the backtrace feature on SGX
+    //
+    // The Rust SGX target (current version 1.1.3) does not support the backtrace attribute
+    // but the build script would otherwise enable the backtrace feature because the build script's
+    // probe is compiled with the host toolchain which supports the backtrace feature !
+
+    if cfg!(feature = "std") && env::var("CARGO_CFG_TARGET_ENV").unwrap() != "sgx" {
         match compile_probe() {
             Some(status) if status.success() => println!("cargo:rustc-cfg=backtrace"),
             _ => {}
